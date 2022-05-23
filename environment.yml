@@ -1,7 +1,7 @@
 name: mol2image
 channels:
   - pytorch
-  - conda-forge
+  - conda-metachannel
   - defaults
 dependencies:
   - python=3.7
