@@ -1,4 +1,3 @@
-pyro-ppl
 einops>=0.4
 pillow
 transformers 
@@ -8,6 +7,9 @@ pandas
 torch>=1.6
 torchvision
 tqdm
-
-
+scipy
+tensorboardx
+scikit-learn
+hyperopt
+rdkit
 
