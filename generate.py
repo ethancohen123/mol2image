@@ -53,7 +53,7 @@ def setup_args():
     options = argparse.ArgumentParser()
 
     options.add_argument('--save-dir', action="store", default='results')
-    options.add_argument('--datadir', action="store", default="data/images/")
+    options.add_argument('--datadir', action="store", default="/projects/imagesets3/Cell_Painting_dataset/subset_bray/images00/")
     options.add_argument('--pt-config-file', action="store", default='config.json')
 
     options.add_argument('--train-metafile', action="store", default="data/metadata/datasplit_gen_train.csv")
