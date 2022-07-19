@@ -1,7 +1,6 @@
 import torch
 from torch.utils.data import Dataset
 from torchvision.transforms import ToTensor, Normalize
-from gulpio.transforms import ComposeVideo, RandHorFlipVideo, RandVerFlipVideo, RandomCropVideo, CenterCrop
 from .utils import ResizeTensor, CropPatch
 
 import numpy as np
@@ -9,30 +8,45 @@ import pandas as pd
 
 import os
 
+from albumentations import (
+    Resize, 
+    CenterCrop, 
+    Normalize,   
+    RandomCrop,
+    Compose,
+    Transpose,
+    HorizontalFlip,
+    VerticalFlip,    
+    Compose,
+    Transpose,
+    RandomRotate90,
+)
+
+from albumentations.pytorch.transforms import ToTensorV2
+
+
 class CustomTransform(object):
     def __init__(self, mode, img_size=512, original_size=512):
         if mode == 'train':
-            img_transforms = []
-            video_transforms = [RandomCropVideo(original_size), RandHorFlipVideo(), RandVerFlipVideo()]
+            transforms=Compose([RandomCrop(original_size,original_size),VerticalFlip(p=0.5),HorizontalFlip(p=0.5),Normalize((0.5, 0.5, 0.5, 0.5, 0.5), (1., 1., 1., 1., 1.)),ToTensorV2()])
         elif mode == 'val' or mode == 'test':
-            img_transforms = [CenterCrop(original_size),]
-            video_transforms = []
+            transforms = [CenterCrop(original_size,original_size),Normalize((0.5, 0.5, 0.5, 0.5, 0.5), (1., 1., 1., 1., 1.)),ToTensorV2()]  
         else:
             raise KeyError("mode %s is not valid, must be 'train' or 'val' or 'test'" % mode)
 
-        self.transforms = ComposeVideo(img_transforms=img_transforms, video_transforms=video_transforms)
-        self.to_tensor = ToTensor()
+        self.transforms = transforms
+        self.to_tensor = ToTensorV2()
         self.normalize = Normalize((0.5, 0.5, 0.5, 0.5, 0.5), (1., 1., 1., 1., 1.))
         self.resize = ResizeTensor(image_size=img_size, original_size=original_size)
     
     def __call__(self, imgs):
-        imgs = self.transforms(imgs)
-        imgs = [self.to_tensor(img) for img in imgs]
-        imgs = torch.cat(imgs, 0)
-        imgs = self.normalize(imgs)
+        augmented = self.transforms(image=imgs)
+        imgs=augmented['image'] 
         imgs = self.resize(imgs)
         return imgs
-
+    
+    
+    
 class CellPaintingDataset(Dataset):
     ''' Base Dataset class '''
 
@@ -60,7 +74,7 @@ class CellPaintingDataset(Dataset):
         ''' Load image from key '''
         img = np.load(os.path.join(self.datadir, "%s.npz" % key))
         img = img["sample"] # Shape 520 x 696 x 5
-        img = [img[:,:,j] for j in range(5)]
+        #img = [img[:,:,j] for j in range(5)]
         img = self.transforms(img)
 
         return img
