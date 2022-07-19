@@ -1,0 +1,13 @@
+pyro-ppl
+einops>=0.4
+pillow
+transformers 
+albumentations
+numpy
+pandas
+torch>=1.6
+torchvision
+tqdm
+
+
+
