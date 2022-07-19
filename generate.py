@@ -4,6 +4,12 @@ from torchvision.utils import save_image
 import numpy as np
 import random
 
+import pandas as pd
+
+import sys
+sys.path.insert(0, '/projects/synsight/ethan/test_mol2img/mol2image/chemprop/')
+
+
 from dataset import setup_dataloaders
 from models.proglow import build_proglow_model
 from utils import setup_logger, parse_json, save_img_as_npz
@@ -11,6 +17,36 @@ from utils import setup_logger, parse_json, save_img_as_npz
 import os
 import argparse
 import sys
+
+
+if sys.version_info[0] < 3:
+    from StringIO import StringIO
+else:
+    from io import StringIO
+
+
+def get_free_gpu():
+    gpu_stats = subprocess.check_output(["nvidia-smi", "--format=csv",
+"--query-gpu=memory.used,memory.free"])
+    try:
+        str_gpu_stats = StringIO(gpu_stats)
+    except:
+        str_gpu_stats = StringIO(gpu_stats.decode("utf-8"))
+    gpu_df = pd.read_csv(str_gpu_stats,
+                         names=['memory.used', 'memory.free'],
+                         skiprows=1)
+    print('GPU usage:\n{}'.format(gpu_df))
+    gpu_df['memory.used'] = gpu_df['memory.used'].map(lambda x:
+int(x.rstrip(' [MiB]')))
+    gpu_df['memory.free'] = gpu_df['memory.free'].map(lambda x:
+int(x.rstrip(' [MiB]')))
+    idx = (gpu_df['memory.free']-gpu_df['memory.used']).idxmax()
+    print('Returning GPU{} with {} used MiB and {} free MiB'.format(idx,
+gpu_df.iloc[idx]['memory.used'], gpu_df.iloc[idx]['memory.free']))
+    return idx
+
+free_gpu_id = int(get_free_gpu()) # trouve le gpu libre grace a la fonction precedente
+torch.cuda.set_device(free_gpu_id) # definie le gpu libre trouvee comme gpu de defaut pour PyTorch
 
 def setup_args():
 
@@ -29,7 +65,7 @@ def setup_args():
 
     options.add_argument('--n_sample', default=30, type=int, help='number of samples')
     options.add_argument('--seed', action="store", default=42, type=int)
-    options.add_argument('--batch-size', action="store", dest="batch_size", default=20, type=int)
+    options.add_argument('--batch-size', action="store", dest="batch_size", default=8, type=int)
     options.add_argument('--num-workers', action="store", dest="num_workers", default=0, type=int)
 
     # gpu options
